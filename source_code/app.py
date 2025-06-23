@@ -19,7 +19,7 @@ def main():
     word_filtering_service = WordFilteringService(data_set)
     view = View(on_submit_callback=None)
     backend_callback = word_filtering_service.get_available_words
-    controller = Controller(view, backend_callback)
+    controller = Controller(view, backend_callback) # type: ignore
     view.run()
 
 if __name__ == "__main__":
