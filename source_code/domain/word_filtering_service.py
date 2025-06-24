@@ -1,6 +1,6 @@
 from collections import Counter, defaultdict
 from source_code.utility.constant.color import Color
-from source_code.utility.helper.default_dict_set import defaultdictset
+from source_code.utility.helper.default_dict_set import DefaultDictSet
 from source_code.utility.constant.keys import key
 from source_code.utility.constant.types import DataSet, Word 
 
@@ -8,8 +8,8 @@ from source_code.utility.constant.types import DataSet, Word
 class WordFilteringService():
     def __init__(self, data_set: DataSet):
         self.data_set = data_set
-        self.remaining_words = set().union(*data_set[Color.GREEN].values())
-        self.lookup_cache = {}
+        self.remaining_words: set[str] = set().union(*data_set[Color.GREEN].values())
+        self.lookup_cache: dict[tuple[Color, str, int], set[str]] = {}
 
     def get_available_words(self, word: Word) -> set[str]:
         self.__filter_by_word(word)
@@ -21,12 +21,12 @@ class WordFilteringService():
     def __filter_by_word(self, word: Word) -> None:
         print(str(word))
         candidates = self.remaining_words
-        letter_dict = defaultdict(defaultdictset)
+        letter_dict: defaultdict[str, DefaultDictSet[Color, int]] = defaultdict(DefaultDictSet)
         for letter, position, color in word:
             letter_dict[letter][color].add(position)
 
-        sets_to_intersect = []
-        letter_max_counts = {}
+        sets_to_intersect: list[set[str]] = []
+        letter_max_counts: dict[str, int] = {}
         for letter, color_groups in letter_dict.items():
             green_positions = color_groups.get(Color.GREEN, set())
             yellow_positions = color_groups.get(Color.YELLOW, set())

@@ -92,6 +92,7 @@ class View:
 
         if self.on_submit_callback:
             self.on_submit_callback()
+            self.letter_entries[0].focus_set()
 
     def show_result(self, text: str) -> None:
         if self.result_text:
