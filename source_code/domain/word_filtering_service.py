@@ -16,7 +16,9 @@ class WordFilteringService:
         self.lookup_cache: dict[tuple[Color, str, int], set[str]] = {}
 
     def get_available_words(self, word: Word) -> set[str]:
+        start = time()
         self.__filter_by_word(word)
+        print(f"words filtered in {time() - start} seconds.")
         return self.remaining_words
 
     def reset(self) -> None:
