@@ -1,10 +1,10 @@
-from typing import Callable, List, Tuple, Any
+from typing import List, Tuple, Any
 from source_code.utility.constant.color import Color
 from source_code.utility.constant.types import Word
 
 
 class Controller:
-    def __init__(self, view: Any, backend_callback: Callable[[Word], Any]) -> None:
+    def __init__(self, view: Any, backend_callback: Any) -> None:
         self.view = view
         self.backend_callback = backend_callback
         self.view.on_submit_callback = self.on_submit
