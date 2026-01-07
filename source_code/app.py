@@ -13,7 +13,7 @@ from source_code.application.controller import Controller
 
 def main():
     start = time()
-    data_set = DataSetHandler(Paths.WORDS_FILE, Paths.DATA_SET_CACHE, Paths.METADATA_CACHE, True).get_data_set()
+    data_set = DataSetHandler(Paths.WORDS_FILE, Paths.DATA_SET_CACHE, Paths.METADATA_CACHE).get_data_set()
     print(f"Data set loaded in {time() - start:.2f} seconds.")
     
     word_filtering_service = WordFilteringService(data_set)

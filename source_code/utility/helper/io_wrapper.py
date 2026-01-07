@@ -54,5 +54,6 @@ class IOWrapper():
         try:
             with open(file_path, "rb") as file:
                 return pickle.load(file)
-        except OSError:
+        except Exception as e:
+            print(e)
             print(f"Failed to load pickle file content from {file_path}")

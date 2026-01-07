@@ -3,6 +3,8 @@ from source_code.utility.constant.color import Color
 from source_code.utility.helper.default_dict_set import DefaultDictSet
 from source_code.utility.constant.keys import key
 from source_code.utility.constant.types import DataSet, Word 
+from time import time
+
 
     
 class WordFilteringService():
@@ -12,7 +14,9 @@ class WordFilteringService():
         self.lookup_cache: dict[tuple[Color, str, int], set[str]] = {}
 
     def get_available_words(self, word: Word) -> set[str]:
+        start = time()
         self.__filter_by_word(word)
+        print(f"words filtered in {time() - start} seconds.")
         return self.remaining_words
     
     def reset(self) -> None:

@@ -5,5 +5,5 @@ K = TypeVar("K")
 V = TypeVar("V")
 
 class DefaultDictSet(DefaultDict[K, set[V]], Generic[K, V]):
-    def __init__(self):
-        super().__init__(set)
+    def __init__(self, factory=set):
+        super().__init__(factory)
