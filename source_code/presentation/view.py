@@ -221,7 +221,6 @@ class View:
         self.result_text.pack(fill="both", expand=True)
         self.result_text.tag_configure(self.RESULT_TEXT_TAG, justify="center")
         self.scrollbar.config(command=self.result_text.yview) # type: ignore
-        self.show_result("No results yet.")
 
     def __bind_shortcuts(self) -> None:
         self.root.bind("<KeyPress>", self.__on_keypress)
@@ -300,6 +299,10 @@ class View:
 
     def show_error(self, text: str) -> None:
         self.__set_status(text, self.ERROR_FG)
+
+    def show_fatal_error(self, title: str, text: str) -> None:
+        self.show_error(text)
+        messagebox.showerror(title, text)
 
     def reset(self) -> None:
         for tile in self.guess_tiles:
