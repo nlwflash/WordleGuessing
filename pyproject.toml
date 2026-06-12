@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "WordleGuessing"
+version = "1.0.0"
+description = "A Wordle guessing assistant with a fast Tkinter tile UI."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+authors = [
+  { name = "WordleGuessing contributors" },
+]
+keywords = ["wordle", "tkinter", "desktop", "windows"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Win32 (MS Windows)",
+  "Intended Audience :: End Users/Desktop",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: Microsoft :: Windows",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Games/Entertainment :: Puzzle Games",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "mypy>=1.10",
+  "pyinstaller>=6.9",
+  "pytest>=8.4",
+  "ruff>=0.6",
+]
+
+[project.gui-scripts]
+wordleguessing = "source_code.app:run"
+
+[project.scripts]
+wordleguessing-cli = "source_code.app:run"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["source_code*"]
+
+[tool.setuptools.package-data]
+source_code = ["resource/*.txt", "resource/*.ico"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+exclude = ["test/_tmp"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["source_code"]
+check_untyped_defs = true
+warn_unused_configs = true
+pretty = true

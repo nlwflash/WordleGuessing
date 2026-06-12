@@ -1,4 +1,3 @@
-import ast
 from typing import Sequence
 from source_code.utility.constant.color import Color
 
@@ -76,20 +75,5 @@ def find_first_invalid_index(letters: Sequence[str], colors: Sequence[str]) -> i
 
         if color not in valid_colors:
             return idx
-
-    return None
-
-
-def count_candidate_words(result_text: str) -> int | None:
-    if result_text == "set()":
-        return 0
-
-    try:
-        parsed = ast.literal_eval(result_text)
-    except (SyntaxError, ValueError):
-        return None
-
-    if isinstance(parsed, (set, list, tuple, dict)):
-        return len(parsed)
 
     return None

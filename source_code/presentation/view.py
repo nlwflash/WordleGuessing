@@ -1,16 +1,19 @@
+import logging
 import tkinter as tk
-from tkinter import StringVar, Button, Scrollbar, Text, RIGHT, Y
-from tkinter import Frame, Event, Label
-from typing import Callable, Optional, List, Tuple
+from collections.abc import Callable, Sequence
+from tkinter import RIGHT, Y, Button, Event, Frame, Label, Scrollbar, StringVar, Text, messagebox
+from typing import List, Optional, Tuple
 from source_code.presentation.guess_tile import GuessTile
 from source_code.presentation.letter_input import (
     apply_letter_input,
-    count_candidate_words,
     cycle_color_state,
     find_first_invalid_index,
     get_color_from_hotkey,
     is_guess_complete,
 )
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class View:
@@ -25,18 +28,30 @@ class View:
     PRIMARY_ACTIVE_BG = "#374151"
     SECONDARY_BG = "#e9e1d1"
     SECONDARY_ACTIVE_BG = "#ddd2bf"
+    TERTIARY_BG = "#d7ccb8"
+    TERTIARY_ACTIVE_BG = "#cabca4"
     DISABLED_BG = "#d6cec0"
     DISABLED_FG = "#8d8578"
+    RESULT_TEXT_TAG = "results_center"
+    RESULT_COLUMNS = 7
+    RESULT_COLUMN_WIDTH = 8
     HELPER_TEXT = "Type letters, Space changes color, Enter submits"
+    EMPTY_RESULTS_TEXT = "Enter a guess to see matching words."
+    HOW_TO_TEXT = (
+        "How to use: type letters, use Space or 1 / 2 / 3 to set colors, "
+        "press Enter to submit, and use New Puzzle to start over."
+    )
 
     def __init__(
         self,
         on_submit_callback: Optional[Callable[[], None]] = None,
+        on_reset_solver_callback: Optional[Callable[[], None]] = None,
         root: Optional[tk.Tk] = None,
     ) -> None:
         self.on_submit_callback = on_submit_callback
+        self.on_reset_solver_callback = on_reset_solver_callback
         self.root: tk.Tk = root or tk.Tk()
-        self.root.title("Wordle Guess Input")
+        self.root.title("WordleGuessing")
         self.root.resizable(False, False)
         self.root.configure(bg=self.APP_BG)
 
@@ -53,10 +68,12 @@ class View:
         self.result_frame: Optional[Frame] = None
         self.submit_btn: Optional[Button] = None
         self.clear_btn: Optional[Button] = None
+        self.new_puzzle_btn: Optional[Button] = None
 
         self.__build_ui()
         self.__bind_shortcuts()
         self.__update_submit_state()
+        self.clear_results()
         self.root.after_idle(self.guess_tiles[0].focus_tile)
 
     def __build_ui(self) -> None:
@@ -81,6 +98,16 @@ class View:
             bg=self.APP_BG,
             fg=self.MUTED_FG,
         ).pack(pady=(4, 0))
+
+        Label(
+            header,
+            text=self.HOW_TO_TEXT,
+            font=("Arial", 10),
+            bg=self.APP_BG,
+            fg=self.BODY_FG,
+            wraplength=520,
+            justify="center",
+        ).pack(pady=(10, 0))
 
         input_panel = tk.Frame(app_frame, bg=self.PANEL_BG, bd=0, padx=18, pady=18)
         input_panel.pack(fill="x")
@@ -130,7 +157,7 @@ class View:
 
         self.clear_btn = Button(
             action_row,
-            text="Clear",
+            text="Clear Row",
             command=self.reset,
             font=("Arial", 12),
             width=10,
@@ -143,7 +170,24 @@ class View:
             activebackground=self.SECONDARY_ACTIVE_BG,
             activeforeground=self.BODY_FG,
         )
-        self.clear_btn.grid(row=0, column=1)
+        self.clear_btn.grid(row=0, column=1, padx=(0, 8))
+
+        self.new_puzzle_btn = Button(
+            action_row,
+            text="New Puzzle",
+            command=self.on_reset_solver,
+            font=("Arial", 12),
+            width=11,
+            height=2,
+            bd=0,
+            relief="flat",
+            cursor="hand2",
+            bg=self.TERTIARY_BG,
+            fg=self.BODY_FG,
+            activebackground=self.TERTIARY_ACTIVE_BG,
+            activeforeground=self.BODY_FG,
+        )
+        self.new_puzzle_btn.grid(row=0, column=2)
 
         self.result_frame = tk.Frame(app_frame, bg=self.SURFACE_BG, bd=0, padx=14, pady=14)
         self.result_frame.pack(fill="both", expand=True, pady=(14, 0))
@@ -164,8 +208,8 @@ class View:
 
         self.result_text = Text(
             result_body,
-            wrap="word",
-            height=10,
+            wrap="none",
+            height=12,
             font=("Consolas", 11),
             bg=self.SURFACE_BG,
             fg=self.BODY_FG,
@@ -175,8 +219,8 @@ class View:
             yscrollcommand=self.scrollbar.set,
         )
         self.result_text.pack(fill="both", expand=True)
+        self.result_text.tag_configure(self.RESULT_TEXT_TAG, justify="center")
         self.scrollbar.config(command=self.result_text.yview) # type: ignore
-        self.show_result("No results yet.")
 
     def __bind_shortcuts(self) -> None:
         self.root.bind("<KeyPress>", self.__on_keypress)
@@ -190,40 +234,63 @@ class View:
         ]
 
     def on_submit(self) -> None:
-        letters = [tile.get_letter() for tile in self.guess_tiles]
-        colors = [tile.get_color_state() for tile in self.guess_tiles]
-        invalid_idx = find_first_invalid_index(letters, colors)
+        try:
+            letters = [tile.get_letter() for tile in self.guess_tiles]
+            colors = [tile.get_color_state() for tile in self.guess_tiles]
+            invalid_idx = find_first_invalid_index(letters, colors)
 
-        if invalid_idx is not None:
-            self.__focus_tile(invalid_idx)
-            if not letters[invalid_idx]:
-                self.show_error("Enter a letter in each tile before submitting.")
-            else:
-                self.show_error("Select a color for each tile before submitting.")
-            return
+            if invalid_idx is not None:
+                self.__focus_tile(invalid_idx)
+                if not letters[invalid_idx]:
+                    self.show_error("Enter a letter in each tile before submitting.")
+                else:
+                    self.show_error("Select a color for each tile before submitting.")
+                return
 
-        self.__clear_pending_color_target()
-        self.__set_helper_status()
-        if self.on_submit_callback:
-            self.on_submit_callback()
-            self.__focus_tile(0)
+            self.__clear_pending_color_target()
+            self.__set_helper_status()
+            if self.on_submit_callback:
+                self.on_submit_callback()
+                self.__focus_tile(0)
+        except Exception:
+            LOGGER.exception("Unexpected error while submitting a guess")
+            self.show_fatal_error(
+                "Unable to process guess",
+                "Something unexpected went wrong while submitting your guess.",
+            )
 
-    def show_result(self, text: str) -> None:
-        result_count = count_candidate_words(text)
-        if result_count is None:
-            self.result_summary_var.set("Results")
-        else:
-            noun = "candidate" if result_count == 1 else "candidates"
-            self.result_summary_var.set(f"{result_count} {noun}")
+    def on_reset_solver(self) -> None:
+        try:
+            self.__clear_pending_color_target()
+            if self.on_reset_solver_callback:
+                self.on_reset_solver_callback()
+                return
 
-        if self.result_text:
-            self.result_text.config(state="normal")
-            self.result_text.delete("1.0", tk.END)
-            self.result_text.insert(tk.END, f"Results:\n{text}")
-            self.result_text.config(state="disabled")
+            self.reset()
+            self.clear_results()
+        except Exception:
+            LOGGER.exception("Unexpected error while starting a new puzzle")
+            self.show_fatal_error(
+                "Unable to start a new puzzle",
+                "Something unexpected went wrong while resetting the puzzle.",
+            )
+
+    def show_results(self, candidates: Sequence[str]) -> None:
+        noun = "candidate" if len(candidates) == 1 else "candidates"
+        self.result_summary_var.set(f"{len(candidates)} {noun}")
+        result_text = self.__format_candidates_grid(candidates)
+        self.__write_results(result_text)
+
+    def clear_results(self) -> None:
+        self.result_summary_var.set("Results")
+        self.__write_results(self.EMPTY_RESULTS_TEXT)
 
     def show_error(self, text: str) -> None:
         self.__set_status(text, self.ERROR_FG)
+
+    def show_fatal_error(self, title: str, text: str) -> None:
+        self.show_error(text)
+        messagebox.showerror(title, text)
 
     def reset(self) -> None:
         for tile in self.guess_tiles:
@@ -424,3 +491,30 @@ class View:
     def __clear_pending_color_target(self) -> None:
         self.pending_color_tile_idx = None
         self.pending_color_focus_idx = None
+
+    def __write_results(self, body: str) -> None:
+        if not self.result_text:
+            return
+
+        self.result_text.config(state="normal")
+        self.result_text.delete("1.0", tk.END)
+        self.result_text.insert(tk.END, body, (self.RESULT_TEXT_TAG,))
+        self.result_text.config(state="disabled")
+
+    def __format_candidates_grid(self, candidates: Sequence[str]) -> str:
+        if not candidates:
+            return "No candidate words remain."
+
+        lines: list[str] = []
+        for start_idx in range(0, len(candidates), self.RESULT_COLUMNS):
+            row = list(candidates[start_idx:start_idx + self.RESULT_COLUMNS])
+            if len(row) > 1:
+                padded_cells = [
+                    f"{word:<{self.RESULT_COLUMN_WIDTH}}" for word in row[:-1]
+                ]
+                padded_cells.append(row[-1])
+                lines.append("".join(padded_cells).rstrip())
+            else:
+                lines.append(row[0])
+
+        return "\n".join(lines)

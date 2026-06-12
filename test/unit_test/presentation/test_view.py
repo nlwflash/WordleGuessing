@@ -1,6 +1,6 @@
-from source_code.presentation.view import View
 import tkinter as tk
 from types import SimpleNamespace
+from source_code.presentation.view import View
 
 
 class StubTile:
@@ -56,8 +56,32 @@ class StubButton:
         self.options.update(kwargs)
 
 
+class StubText:
+    def __init__(self) -> None:
+        self.state = "disabled"
+        self.contents = ""
+        self.tags: dict[str, dict[str, str]] = {}
+        self.inserted_tags: tuple[str, ...] = ()
+
+    def config(self, **kwargs) -> None:
+        if "state" in kwargs:
+            self.state = kwargs["state"]
+
+    def tag_configure(self, tag_name: str, **kwargs) -> None:
+        self.tags[tag_name] = kwargs
+
+    def delete(self, _start: str, _end: str) -> None:
+        self.contents = ""
+
+    def insert(self, _index: str, value: str, tags: tuple[str, ...] = ()) -> None:
+        self.contents = value
+        self.inserted_tags = tags
+
+
 def build_stub_view(tiles: list[StubTile]) -> View:
     view = View.__new__(View)
+    view.on_submit_callback = None
+    view.on_reset_solver_callback = None
     view.guess_tiles = tiles
     view.focus_idx = 0
     view.pending_color_tile_idx = None
@@ -67,7 +91,8 @@ def build_stub_view(tiles: list[StubTile]) -> View:
     view.status_label = StubLabel()
     view.submit_btn = StubButton()
     view.clear_btn = StubButton()
-    view.result_text = None
+    view.new_puzzle_btn = StubButton()
+    view.result_text = StubText()
     return view
 
 
@@ -116,6 +141,32 @@ def test_show_error_updates_inline_status_instead_of_using_modal_behavior():
     assert view.status_label.options["fg"] == View.ERROR_FG
 
 
+def test_show_results_renders_candidates_in_a_compact_grid():
+    view = build_stub_view([StubTile() for _ in range(5)])
+
+    view.show_results(["abets", "abuts", "actas", "actus", "adats", "advts", "adyts"])
+
+    assert view.result_summary_var.get() == "7 candidates"
+    assert view.result_text.contents == "abets   abuts   actas   actus   adats   advts   adyts"
+
+
+def test_write_results_uses_centered_text_tag():
+    view = build_stub_view([StubTile() for _ in range(5)])
+
+    view._View__write_results("abets   abuts")
+
+    assert view.result_text.inserted_tags == (View.RESULT_TEXT_TAG,)
+
+
+def test_clear_results_restores_default_result_message():
+    view = build_stub_view([StubTile() for _ in range(5)])
+
+    view.clear_results()
+
+    assert view.result_summary_var.get() == "Results"
+    assert view.result_text.contents == View.EMPTY_RESULTS_TEXT
+
+
 def test_update_submit_state_disables_button_for_incomplete_guess():
     view = build_stub_view([
         StubTile("C", "green"),
@@ -161,6 +212,28 @@ def test_on_submit_focuses_first_invalid_tile_and_does_not_call_callback():
     assert callback_calls == []
     assert view.status_var.get() == "Enter a letter in each tile before submitting."
     assert tiles[1].focus_calls == 1
+
+
+def test_on_reset_solver_uses_callback_when_available():
+    callback_calls: list[str] = []
+    view = build_stub_view([StubTile() for _ in range(5)])
+    view.on_reset_solver_callback = lambda: callback_calls.append("called")
+
+    view.on_reset_solver()
+
+    assert callback_calls == ["called"]
+
+
+def test_show_fatal_error_uses_modal_messagebox(monkeypatch):
+    reported_errors: list[tuple[str, str]] = []
+    view = build_stub_view([StubTile() for _ in range(5)])
+
+    monkeypatch.setattr("source_code.presentation.view.messagebox.showerror", lambda title, text: reported_errors.append((title, text)))
+
+    view.show_fatal_error("Unexpected Error", "Boom")
+
+    assert reported_errors == [("Unexpected Error", "Boom")]
+    assert view.status_var.get() == "Boom"
 
 
 def test_active_tile_lookup_does_not_confuse_tile_two_for_tile_one():
@@ -233,7 +306,6 @@ def test_duplicate_focus_event_after_auto_advance_keeps_color_target_on_last_typ
         view.guess_tiles[0].focus_tile()
         view._View__on_keypress(SimpleNamespace(keysym="a", char="a", state=0))
 
-        # Simulate the extra Tk focus callback that happens after the auto-advance focus move.
         view._View__on_tile_focus(1)
         view._View__on_keypress(SimpleNamespace(keysym="space", char=" ", state=0))
 
