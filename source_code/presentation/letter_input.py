@@ -1,6 +1,6 @@
 from typing import Sequence
-
 from source_code.utility.constant.color import Color
+
 
 UNSET_COLOR = ""
 COLOR_CYCLE: tuple[str, ...] = (

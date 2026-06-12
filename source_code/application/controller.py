@@ -1,9 +1,41 @@
 import logging
 from collections.abc import Callable, Collection, Sequence
 from typing import List, Protocol, Tuple
-
 from source_code.utility.constant.color import Color
 from source_code.utility.constant.types import Word
+
+LOGGER = logging.getLogger(__name__)
+
+
+class ControllerView(Protocol):
+    on_submit_callback: Callable[[], None] | None
+    on_reset_solver_callback: Callable[[], None] | None
+
+    def get_letter_color_inputs(self) -> List[Tuple[str, str]]:
+        ...
+
+    def show_error(self, message: str) -> None:
+        ...
+
+    def show_fatal_error(self, title: str, message: str) -> None:
+        ...
+
+    def show_results(self, candidates: Sequence[str]) -> None:
+        ...
+
+    def clear_results(self) -> None:
+        ...
+
+    def reset(self) -> None:
+        ...
+
+    def run(self) -> None:
+        ...
+
+
+BackendCallback = Callable[[Word], Collection[str]]
+ResetSolverCallback = Callable[[], None]
+
 
 LOGGER = logging.getLogger(__name__)
 

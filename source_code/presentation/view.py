@@ -1,9 +1,8 @@
 import logging
 import tkinter as tk
 from collections.abc import Callable, Sequence
-from tkinter import RIGHT, Button, Event, Frame, Label, Scrollbar, StringVar, Text, Y, messagebox
+from tkinter import RIGHT, Y, Button, Event, Frame, Label, Scrollbar, StringVar, Text, messagebox
 from typing import List, Optional, Tuple
-
 from source_code.presentation.guess_tile import GuessTile
 from source_code.presentation.letter_input import (
     apply_letter_input,
@@ -12,6 +11,7 @@ from source_code.presentation.letter_input import (
     get_color_from_hotkey,
     is_guess_complete,
 )
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -325,7 +325,7 @@ class View:
             self.on_submit()
             return "break"
 
-        if isinstance(event.state, int) and event.state & 0x4:
+        if event.state & 0x4:
             return None
 
         tile_idx = self.__get_active_tile_index()

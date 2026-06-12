@@ -3,12 +3,12 @@ import logging
 import tkinter as tk
 from tkinter import messagebox
 from typing import Callable, Sequence
-
 from source_code.application.controller import Controller, ControllerView
 from source_code.domain.word_filtering_service import WordFilteringService
 from source_code.infrastructure.data_set_handler import DataSetHandler
 from source_code.presentation.view import View
 from source_code.utility.helper.app_paths import AppPaths
+
 
 LOGGER = logging.getLogger(__name__)
 

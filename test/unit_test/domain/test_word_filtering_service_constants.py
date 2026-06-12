@@ -1,8 +1,8 @@
 from collections import defaultdict
-from typing import Final
-
 from source_code.utility.constant.color import Color
 from source_code.utility.constant.types import DataSet
+from typing import Final
+
 
 TEST_DATA_SET: Final[DataSet] = defaultdict(
         lambda: defaultdict(set),

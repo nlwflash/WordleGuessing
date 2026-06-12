@@ -1,5 +1,4 @@
 import pytest
-
 from source_code.presentation.letter_input import (
     UNSET_COLOR,
     apply_letter_input,

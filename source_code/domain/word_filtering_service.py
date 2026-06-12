@@ -1,10 +1,10 @@
 import logging
 from collections import Counter, defaultdict
-
 from source_code.utility.constant.color import Color
 from source_code.utility.constant.keys import key
 from source_code.utility.constant.types import DataSet, Word
 from source_code.utility.helper.default_dict_set import DefaultDictSet
+
 
 LOGGER = logging.getLogger(__name__)
 

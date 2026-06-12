@@ -48,13 +48,11 @@ def test_main_can_launch_from_a_non_repo_working_directory(monkeypatch, workspac
     assert callable(view.on_reset_solver_callback)
 
 
-def test_run_reports_startup_errors():
+def test_run_reports_startup_errors(monkeypatch):
     reported_errors: list[tuple[str, str]] = []
+    monkeypatch.setattr("source_code.app.show_startup_error", lambda title, message: reported_errors.append((title, message)))
 
-    def report_error(title: str, message: str) -> None:
-        reported_errors.append((title, message))
-
-    exit_code = run([], app_paths=BrokenAppPaths(), error_reporter=report_error)
+    exit_code = run([], app_paths=BrokenAppPaths(), error_reporter=lambda title, message: reported_errors.append((title, message)))
 
     assert exit_code == 1
     assert reported_errors

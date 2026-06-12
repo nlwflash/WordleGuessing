@@ -1,6 +1,5 @@
 import tkinter as tk
 from typing import Callable
-
 from source_code.presentation.letter_input import UNSET_COLOR
 
 
