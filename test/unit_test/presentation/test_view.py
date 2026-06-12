@@ -229,7 +229,13 @@ def test_show_fatal_error_uses_modal_messagebox(monkeypatch):
     reported_errors: list[tuple[str, str]] = []
     view = build_stub_view([StubTile() for _ in range(5)])
 
-    monkeypatch.setattr("source_code.presentation.view.messagebox.showerror", lambda title, text: reported_errors.append((title, text)))
+    def report_error(title: str, text: str) -> None:
+        reported_errors.append((title, text))
+
+    monkeypatch.setattr(
+        "source_code.presentation.view.messagebox.showerror",
+        report_error,
+    )
 
     view.show_fatal_error("Unexpected Error", "Boom")
 

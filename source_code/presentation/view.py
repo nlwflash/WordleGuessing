@@ -325,7 +325,7 @@ class View:
             self.on_submit()
             return "break"
 
-        if event.state & 0x4:
+        if isinstance(event.state, int) and event.state & 0x4:
             return None
 
         tile_idx = self.__get_active_tile_index()

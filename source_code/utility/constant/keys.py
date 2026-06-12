@@ -5,7 +5,9 @@ from source_code.utility.constant.types import Key
 
 ASCII_LOWERCASE_SET: Final[set[str]] = set(ascii_lowercase)
 KEY_POOL: Final[dict[Key, Key]] = {
-    (l, p): (l, p) for l in ASCII_LOWERCASE_SET for p in range(5)
+    (letter, position): (letter, position)
+    for letter in ASCII_LOWERCASE_SET
+    for position in range(5)
 }
 
 def key(letter: str, position: int) -> Key:
