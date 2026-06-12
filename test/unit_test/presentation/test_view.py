@@ -1,5 +1,6 @@
 import tkinter as tk
 from types import SimpleNamespace
+
 from source_code.presentation.view import View
 
 

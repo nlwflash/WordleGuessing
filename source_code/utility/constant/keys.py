@@ -1,7 +1,7 @@
-from typing import Final
 from string import ascii_lowercase
-from source_code.utility.constant.types import Key
+from typing import Final
 
+from source_code.utility.constant.types import Key
 
 ASCII_LOWERCASE_SET: Final[set[str]] = set(ascii_lowercase)
 KEY_POOL: Final[dict[Key, Key]] = {
