@@ -1,5 +1,4 @@
-from typing import TypeVar, Generic, DefaultDict
-
+from typing import DefaultDict, Generic, TypeVar
 
 K = TypeVar("K")
 V = TypeVar("V")
