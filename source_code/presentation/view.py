@@ -292,6 +292,9 @@ class View:
         self.show_error(text)
         messagebox.showerror(title, text)
 
+    def show_error(self, text: str) -> None:
+        messagebox.showerror("Input Error", text) # type: ignore
+
     def reset(self) -> None:
         for tile in self.guess_tiles:
             tile.clear()
