@@ -3,6 +3,7 @@ from tkinter import StringVar, Entry, OptionMenu, Button, messagebox, Text, Scro
 from tkinter import Frame, Event
 from typing import Callable, Optional, List, Tuple
 from source_code.utility.constant.color import Color
+from source_code.presentation.letter_input import apply_letter_input
 
 
 class View:
@@ -83,11 +84,11 @@ class View:
         data: List[Tuple[str, str]] = self.get_letter_color_inputs()
 
         if not all(len(letter) == 1 and letter.isalpha() for letter, _ in data):
-            messagebox.showerror("Input Error", "Each letter must be a single alphabetical character.") # type: ignore
+            self.show_error("Each letter must be a single alphabetical character.")
             return
 
-        if not all(color for _, color in data):
-            messagebox.showerror("Input Error", "You must select a color for each letter.") # type: ignore
+        if not all(color in Color._value2member_map_ for _, color in data):
+            self.show_error("You must select a color for each letter.")
             return
 
         if self.on_submit_callback:
@@ -101,6 +102,9 @@ class View:
             self.result_text.insert(tk.END, f"Results:\n{text}")
             self.result_text.config(state="disabled")
 
+    def show_error(self, text: str) -> None:
+        messagebox.showerror("Input Error", text) # type: ignore
+
     def reset(self) -> None:
         for entry in self.letter_entries:
             entry.delete(0, tk.END)
@@ -111,28 +115,14 @@ class View:
         self.root.mainloop()
 
     def __on_letter_typed(self, event: Event, idx: int) -> None:
-        entry: Entry = self.letter_entries[idx]
-        raw_value: str = entry.get()
+        current_values = [entry.get() for entry in self.letter_entries]
+        raw_value = current_values[idx]
+        updated_values, focus_idx = apply_letter_input(current_values, raw_value, idx, event.keysym)
 
-        # Handle backspace
-        if event.keysym == "BackSpace":
-            if not raw_value and idx > 0:
-                prev_entry: Entry = self.letter_entries[idx - 1]
-                prev_entry.focus_set()
-            return
+        for entry, value in zip(self.letter_entries, updated_values):
+            if entry.get() != value:
+                entry.delete(0, tk.END)
+                entry.insert(0, value)
 
-        letters: List[str] = [char.upper() for char in raw_value if char.isalpha()]
-        if not letters:
-            entry.delete(0, tk.END)
-            return
-
-        for offset, char in enumerate(letters):
-            target_idx: int = idx + offset
-            if target_idx >= len(self.letter_entries):
-                break
-            target_entry: Entry = self.letter_entries[target_idx]
-            target_entry.delete(0, tk.END)
-            target_entry.insert(0, char)
-
-        final_focus: int = min(idx + len(letters), len(self.letter_entries)) - 1
-        self.letter_entries[final_focus].focus_set()
+        if focus_idx is not None:
+            self.letter_entries[focus_idx].focus_set()
