@@ -221,6 +221,12 @@ class View:
         self.result_text.pack(fill="both", expand=True)
         self.result_text.tag_configure(self.RESULT_TEXT_TAG, justify="center")
         self.scrollbar.config(command=self.result_text.yview) # type: ignore
+        self.show_result("No results yet.")
+
+    def __bind_shortcuts(self) -> None:
+        self.root.bind("<KeyPress>", self.__on_keypress)
+        self.root.bind("<Control-v>", self.__on_paste)
+        self.root.bind("<<Paste>>", self.__on_paste)
 
     def __bind_shortcuts(self) -> None:
         self.root.bind("<KeyPress>", self.__on_keypress)
@@ -293,7 +299,7 @@ class View:
         messagebox.showerror(title, text)
 
     def show_error(self, text: str) -> None:
-        messagebox.showerror("Input Error", text) # type: ignore
+        self.__set_status(text, self.ERROR_FG)
 
     def reset(self) -> None:
         for tile in self.guess_tiles:
