@@ -57,4 +57,3 @@ python -m mypy
 - The bundled word list is loaded from package resources, so startup does not depend on the
   current working directory.
 - Mutable app data belongs under `%LOCALAPPDATA%\WordleGuessing`.
-- Local `pickle` caching was intentionally removed for safety and simplicity.

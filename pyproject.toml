@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 license = { file = "LICENSE" }
 authors = [
-  { name = "WordleGuessing contributors" },
+  { name = "Nicholas Weigand" },
 ]
 keywords = ["wordle", "tkinter", "desktop", "windows"]
 classifiers = [
