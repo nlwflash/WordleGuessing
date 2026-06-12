@@ -1,7 +1,9 @@
-from pathlib import Path
 import shutil
+from pathlib import Path
 from uuid import uuid4
+
 import pytest
+
 from source_code.infrastructure.data_set_builder import DataSetBuilder
 from source_code.utility.constant.color import Color
 

@@ -1,6 +1,6 @@
 from collections import defaultdict
-from source_code.utility.constant.color import Color
 
+from source_code.utility.constant.color import Color
 
 type Key = tuple[str, int]
 type Index = defaultdict[Key, set[str]]

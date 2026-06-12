@@ -1,9 +1,9 @@
-from pathlib import Path
 from importlib.resources.abc import Traversable
+from pathlib import Path
 from typing import TypeAlias
+
 from source_code.infrastructure.data_set_builder import DataSetBuilder
 from source_code.utility.constant.types import DataSet
-
 
 WordListSource: TypeAlias = str | Path | Traversable
 

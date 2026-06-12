@@ -1,9 +1,9 @@
 import logging
 from collections.abc import Callable, Collection, Sequence
 from typing import List, Protocol, Tuple
+
 from source_code.utility.constant.color import Color
 from source_code.utility.constant.types import Word
-
 
 LOGGER = logging.getLogger(__name__)
 

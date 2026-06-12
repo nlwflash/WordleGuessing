@@ -1,4 +1,5 @@
 import pytest
+
 from source_code.application.controller import Controller
 from source_code.utility.constant.color import Color
 
