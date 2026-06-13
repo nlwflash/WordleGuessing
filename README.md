@@ -44,6 +44,19 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build_windows.ps1
 
 The build script writes the release bundle to `release\WordleGuessing-windows.zip`.
 
+## Android Prototype
+
+The repo now also includes an Android prototype under [`android/`](android) which reuses the
+shared Python solver through Chaquopy and presents a native Jetpack Compose UI.
+
+- The Android build expects the repo-local `.venv` and points Chaquopy at that interpreter when
+  it exists.
+- Install JDK 17 plus the normal Android SDK/Android Studio tooling before building the app.
+- If you do not already have a Gradle wrapper in `android/`, generate one after installing
+  Gradle or opening the project in Android Studio.
+
+See [`docs/android-prototype.md`](docs/android-prototype.md) for setup and build details.
+
 ## Development Checks
 
 ```powershell
