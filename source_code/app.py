@@ -6,8 +6,8 @@ from typing import Callable, Sequence
 
 from source_code.application.controller import Controller, ControllerView
 from source_code.domain.word_filtering_service import WordFilteringService
-from source_code.infrastructure.data_set_handler import DataSetHandler
 from source_code.presentation.view import View
+from source_code.solver_core.service_factory import create_default_word_filtering_service
 from source_code.utility.helper.app_paths import AppPaths
 
 LOGGER = logging.getLogger(__name__)
@@ -31,9 +31,7 @@ def configure_logging(debug: bool = False) -> None:
 
 
 def build_word_filtering_service(app_paths: AppPaths | None = None) -> WordFilteringService:
-    resolved_paths = app_paths or AppPaths()
-    data_set = DataSetHandler(resolved_paths.word_list_resource).get_data_set()
-    return WordFilteringService(data_set)
+    return create_default_word_filtering_service(app_paths=app_paths)
 
 
 def launch_application(
