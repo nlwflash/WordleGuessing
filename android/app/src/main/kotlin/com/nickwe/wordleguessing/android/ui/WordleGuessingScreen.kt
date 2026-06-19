@@ -1,15 +1,20 @@
 package com.nickwe.wordleguessing.android.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -23,12 +28,18 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.nickwe.wordleguessing.android.solver.SolverUiState
@@ -38,139 +49,227 @@ import com.nickwe.wordleguessing.android.solver.TileState
 @Composable
 fun WordleGuessingScreen(
     uiState: SolverUiState,
-    onLetterChange: (Int, String) -> Unit,
+    onLetterChange: (Int, String) -> Int?,
     onColorClick: (Int) -> Unit,
     onSubmit: () -> Unit,
     onClearRow: () -> Unit,
     onNewPuzzle: () -> Unit,
 ) {
+    val focusManager = LocalFocusManager.current
+    val focusRequesters = remember { List(5) { FocusRequester() } }
+
     Surface(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .safeDrawingPadding()
+                .imePadding()
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Wordle Guessing Assistant",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = "Type one guess, tap each color until it matches the clue, and keep narrowing the list offline.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            Card {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
                     Text(
-                        text = "Wordle Guessing Assistant",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
+                        text = "Current Guess",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        text = "Enter one five-letter guess, tap each tile color, then submit to narrow the remaining candidates offline.",
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = "Letter focus advances automatically. You can also paste into an empty tile to fill the row.",
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                }
-            }
 
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    uiState.tiles.forEachIndexed { index, tile ->
-                        GuessTileEditor(
-                            modifier = Modifier.weight(1f),
-                            index = index,
-                            tile = tile,
-                            onLetterChange = onLetterChange,
-                            onColorClick = onColorClick,
-                        )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        uiState.tiles.forEachIndexed { index, tile ->
+                            GuessTileEditor(
+                                modifier = Modifier.weight(1f),
+                                index = index,
+                                tile = tile,
+                                focusRequester = focusRequesters[index],
+                                isLastTile = index == uiState.tiles.lastIndex,
+                                onLetterChange = { rawInput ->
+                                    val hasLetterInput = rawInput.any { it.isLetter() }
+                                    val nextFocusIndex = onLetterChange(index, rawInput)
+                                    when {
+                                        nextFocusIndex != null -> focusRequesters[nextFocusIndex].requestFocus()
+                                        hasLetterInput -> focusManager.clearFocus()
+                                    }
+                                },
+                                onColorClick = {
+                                    focusManager.clearFocus()
+                                    onColorClick(index)
+                                },
+                                onMoveNext = {
+                                    if (index < focusRequesters.lastIndex) {
+                                        focusRequesters[index + 1].requestFocus()
+                                    } else {
+                                        focusManager.clearFocus()
+                                    }
+                                },
+                                onDone = { focusManager.clearFocus() },
+                            )
+                        }
                     }
-                }
-            }
 
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
                     Button(
                         modifier = Modifier
-                            .weight(1f)
+                            .fillMaxWidth()
+                            .heightIn(min = 52.dp)
                             .testTag("submit_button"),
                         enabled = uiState.isSubmitEnabled,
-                        onClick = onSubmit,
+                        onClick = {
+                            focusManager.clearFocus()
+                            onSubmit()
+                        },
                     ) {
                         Text("Submit Guess")
                     }
 
-                    FilledTonalButton(
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("clear_row_button"),
-                        onClick = onClearRow,
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        Text("Clear Row")
-                    }
+                        FilledTonalButton(
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 48.dp)
+                                .testTag("clear_row_button"),
+                            onClick = {
+                                focusManager.clearFocus()
+                                onClearRow()
+                            },
+                        ) {
+                            Text("Clear Row")
+                        }
 
-                    FilledTonalButton(
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("new_puzzle_button"),
-                        onClick = onNewPuzzle,
-                    ) {
-                        Text("New Puzzle")
+                        FilledTonalButton(
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 48.dp)
+                                .testTag("new_puzzle_button"),
+                            onClick = {
+                                focusManager.clearFocus()
+                                onNewPuzzle()
+                            },
+                        ) {
+                            Text("New Puzzle")
+                        }
                     }
                 }
             }
 
             uiState.errorMessage?.let { message ->
-                item {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                    ),
+                ) {
                     Text(
                         text = message,
-                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.fillMaxWidth().padding(12.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer,
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
             }
 
-            item {
-                Text(
-                    text = uiState.resultSummary,
-                    modifier = Modifier.testTag("result_count"),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(
+                        text = uiState.resultSummary,
+                        modifier = Modifier.testTag("result_count"),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
 
-            if (!uiState.hasSubmittedGuess) {
-                item {
-                    Text(
-                        text = "Enter a guess to see matching words.",
-                        modifier = Modifier.testTag("empty_results_text"),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            } else if (uiState.candidates.isEmpty()) {
-                item {
-                    Text(
-                        text = "No candidate words remain.",
-                        modifier = Modifier.testTag("empty_results_text"),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            } else {
-                items(uiState.candidates, key = { it }) { candidate ->
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        ),
-                    ) {
-                        Text(
-                            text = candidate,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 12.dp)
-                                .testTag("candidate_item_$candidate"),
-                            style = MaterialTheme.typography.bodyLarge,
-                        )
+                    when {
+                        !uiState.hasSubmittedGuess -> {
+                            EmptyResultsState(
+                                text = "Enter a guess to see matching words.",
+                            )
+                        }
+
+                        uiState.candidates.isEmpty() -> {
+                            EmptyResultsState(
+                                text = "No candidate words remain.",
+                            )
+                        }
+
+                        else -> {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                items(uiState.candidates, key = { it }) { candidate ->
+                                    Card(
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                        ),
+                                    ) {
+                                        Text(
+                                            text = candidate,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 16.dp, vertical = 12.dp)
+                                                .testTag("candidate_item_$candidate"),
+                                            style = MaterialTheme.typography.bodyLarge,
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun EmptyResultsState(text: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.testTag("empty_results_text"),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.bodyMedium,
+        )
     }
 }
 
@@ -180,8 +279,12 @@ private fun GuessTileEditor(
     modifier: Modifier = Modifier,
     index: Int,
     tile: TileState,
-    onLetterChange: (Int, String) -> Unit,
-    onColorClick: (Int) -> Unit,
+    focusRequester: FocusRequester,
+    isLastTile: Boolean,
+    onLetterChange: (String) -> Unit,
+    onColorClick: () -> Unit,
+    onMoveNext: () -> Unit,
+    onDone: () -> Unit,
 ) {
     val palette = tilePalette(tile.color)
     Column(
@@ -191,13 +294,26 @@ private fun GuessTileEditor(
     ) {
         OutlinedTextField(
             value = tile.letter,
-            onValueChange = { onLetterChange(index, it) },
+            onValueChange = onLetterChange,
             modifier = Modifier
                 .fillMaxWidth()
+                .height(80.dp)
+                .focusRequester(focusRequester)
                 .testTag("letter_input_$index"),
             singleLine = true,
-            textStyle = MaterialTheme.typography.titleLarge.copy(textAlign = TextAlign.Center),
-            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
+            textStyle = MaterialTheme.typography.headlineSmall.copy(
+                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.Bold,
+            ),
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.Characters,
+                keyboardType = KeyboardType.Text,
+                imeAction = if (isLastTile) ImeAction.Done else ImeAction.Next,
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = { onMoveNext() },
+                onDone = { onDone() },
+            ),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedTextColor = palette.contentColor,
                 unfocusedTextColor = palette.contentColor,
@@ -211,14 +327,19 @@ private fun GuessTileEditor(
         FilledTonalButton(
             modifier = Modifier
                 .fillMaxWidth()
+                .heightIn(min = 48.dp)
                 .testTag("color_button_$index"),
-            onClick = { onColorClick(index) },
+            onClick = onColorClick,
             colors = ButtonDefaults.filledTonalButtonColors(
                 containerColor = palette.containerColor,
                 contentColor = palette.contentColor,
             ),
         ) {
-            Text(tile.color.label)
+            Text(
+                text = tile.color.label,
+                maxLines = 1,
+                style = MaterialTheme.typography.labelLarge,
+            )
         }
     }
 }
@@ -229,16 +350,19 @@ private fun tilePalette(tileColor: TileColor): TilePalette = when (tileColor) {
         contentColor = Color(0xFF1F2937),
         borderColor = Color(0xFF9F9687),
     )
+
     TileColor.GRAY -> TilePalette(
         containerColor = Color(0xFF787C7E),
         contentColor = Color.White,
         borderColor = Color(0xFF5A5D5E),
     )
+
     TileColor.YELLOW -> TilePalette(
         containerColor = Color(0xFFC9B458),
         contentColor = Color.White,
         borderColor = Color(0xFFA58F39),
     )
+
     TileColor.GREEN -> TilePalette(
         containerColor = Color(0xFF6AAA64),
         contentColor = Color.White,

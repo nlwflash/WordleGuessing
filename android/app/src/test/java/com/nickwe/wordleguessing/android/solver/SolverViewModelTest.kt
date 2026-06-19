@@ -23,6 +23,15 @@ class SolverViewModelTest {
     }
 
     @Test
+    fun updateLetterDistributesPastedGuessAcrossEmptyTiles() {
+        val viewModel = SolverViewModel(FakeSolverRepository())
+
+        viewModel.updateLetter(0, "cigar")
+
+        assertEquals(listOf("C", "I", "G", "A", "R"), viewModel.uiState.value.tiles.map { it.letter })
+    }
+
+    @Test
     fun submitGuessUpdatesCandidatesAndClearsTheRow() {
         val repository = FakeSolverRepository(candidates = listOf("cigar"))
         val viewModel = SolverViewModel(repository)

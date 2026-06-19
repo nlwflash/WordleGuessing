@@ -3,6 +3,8 @@ package com.nickwe.wordleguessing.android.solver
 import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import java.util.logging.Level
+import java.util.logging.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,10 +15,35 @@ class SolverViewModel(
     private val _uiState = MutableStateFlow(SolverUiState())
     val uiState: StateFlow<SolverUiState> = _uiState.asStateFlow()
 
-    fun updateLetter(index: Int, rawInput: String) {
-        mutateTile(index) { tile ->
-            tile.copy(letter = rawInput.filter { it.isLetter() }.takeLast(1).uppercase())
+    fun updateLetter(index: Int, rawInput: String): Int? {
+        val current = _uiState.value
+        if (index !in current.tiles.indices) {
+            return null
         }
+
+        val normalizedInput = rawInput.filter { it.isLetter() }.uppercase()
+        val updatedTiles = current.tiles.toMutableList()
+        val nextFocusIndex = if (normalizedInput.length > 1 && current.tiles[index].letter.isEmpty()) {
+            val insertedLetters = normalizedInput.take(updatedTiles.size - index)
+            insertedLetters.forEachIndexed { offset, char ->
+                updatedTiles[index + offset] = updatedTiles[index + offset].copy(letter = char.toString())
+            }
+            (index + insertedLetters.length).takeIf { it in updatedTiles.indices }
+        } else {
+            val normalizedLetter = normalizedInput.takeLast(1)
+            updatedTiles[index] = updatedTiles[index].copy(letter = normalizedLetter)
+            if (normalizedLetter.isNotEmpty() && index < updatedTiles.lastIndex) {
+                index + 1
+            } else {
+                null
+            }
+        }
+
+        _uiState.value = current.copy(
+            tiles = updatedTiles,
+            errorMessage = null,
+        )
+        return nextFocusIndex
     }
 
     fun cycleColor(index: Int) {
@@ -50,7 +77,8 @@ class SolverViewModel(
                 hasSubmittedGuess = true,
                 errorMessage = null,
             )
-        }.onFailure {
+        }.onFailure { error ->
+            LOGGER.log(Level.SEVERE, "submitGuess failed", error)
             _uiState.value = current.copy(
                 errorMessage = "Unable to process guess right now.",
             )
@@ -63,7 +91,8 @@ class SolverViewModel(
             repository.reset()
         }.onSuccess {
             _uiState.value = SolverUiState()
-        }.onFailure {
+        }.onFailure { error ->
+            LOGGER.log(Level.SEVERE, "newPuzzle failed", error)
             _uiState.value = current.copy(
                 errorMessage = "Unable to start a new puzzle right now.",
             )
@@ -98,6 +127,8 @@ class SolverViewModel(
     }
 
     companion object {
+        private val LOGGER: Logger = Logger.getLogger(SolverViewModel::class.java.name)
+
         fun blankTiles(): List<TileState> = List(5) { TileState() }
     }
 }
