@@ -56,6 +56,7 @@ shared Python solver through Chaquopy and presents a native Jetpack Compose UI.
   Gradle or opening the project in Android Studio.
 
 See [`docs/android-prototype.md`](docs/android-prototype.md) for setup and build details.
+For signed APK release notes, see [`docs/android-release.md`](docs/android-release.md).
 
 ## Development Checks
 

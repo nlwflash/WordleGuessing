@@ -56,6 +56,8 @@ Then build or test from `android/`:
 .\gradlew.bat connectedAndroidTest
 ```
 
+For signed release APK setup and versioning, see [`docs/android-release.md`](android-release.md).
+
 ## Implementation Notes
 
 - The Android app starts Python in `WordleGuessingApplication`.
