@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 
 from source_code.domain.word_filtering_service import WordFilteringService
 from source_code.infrastructure.data_set_handler import WordListSource
@@ -30,8 +30,14 @@ class SolverSession:
 
         self.word_filtering_service = create_default_word_filtering_service()
 
-    def submit_guess(self, letters: Sequence[str], colors: Sequence[str]) -> list[str]:
-        return sorted(self.word_filtering_service.get_available_words(self._build_word(letters, colors)))
+    def submit_guess(self, letters: Iterable[str], colors: Iterable[str]) -> list[str]:
+        normalized_letters = [str(letter) for letter in letters]
+        normalized_colors = [str(color) for color in colors]
+        return sorted(
+            self.word_filtering_service.get_available_words(
+                self._build_word(normalized_letters, normalized_colors),
+            ),
+        )
 
     def reset(self) -> None:
         self.word_filtering_service.reset()

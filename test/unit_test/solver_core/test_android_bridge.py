@@ -69,6 +69,17 @@ def test_submit_guess_requires_five_tiles(workspace_tmp_path):
         session.submit_guess(["c"], ["green"])
 
 
+def test_submit_guess_accepts_iterables_without_len(workspace_tmp_path):
+    session = build_solver_session(workspace_tmp_path, ["cigar", "caper", "rebut"])
+
+    result = session.submit_guess(
+        (letter for letter in ["C", "I", "G", "A", "R"]),
+        (color for color in ["green", "green", "green", "green", "green"]),
+    )
+
+    assert result == ["cigar"]
+
+
 @pytest.mark.parametrize("letters", [
     ["ab", "a", "x", "y", "z"],
     ["1", "a", "x", "y", "z"],

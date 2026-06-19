@@ -9,7 +9,7 @@ class PythonSolverRepository private constructor(
     private val session: PyObject,
 ) : SolverRepository {
     override fun submitGuess(letters: List<String>, colors: List<String>): List<String> {
-        return session.callAttr("submit_guess", letters, colors)
+        return session.callAttr("submit_guess", letters.toTypedArray(), colors.toTypedArray())
             .asList()
             .map { it.toString() }
     }
