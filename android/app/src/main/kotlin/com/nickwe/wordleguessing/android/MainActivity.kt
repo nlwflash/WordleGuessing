@@ -24,6 +24,7 @@ class MainActivity : ComponentActivity() {
                 WordleGuessingScreen(
                     uiState = uiState,
                     onLetterChange = viewModel::updateLetter,
+                    onBackspace = viewModel::handleBackspace,
                     onColorClick = viewModel::cycleColor,
                     onSubmit = viewModel::submitGuess,
                     onClearRow = viewModel::clearRow,

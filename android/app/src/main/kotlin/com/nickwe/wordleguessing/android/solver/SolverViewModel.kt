@@ -31,11 +31,12 @@ class SolverViewModel(
             (index + insertedLetters.length).takeIf { it in updatedTiles.indices }
         } else {
             val normalizedLetter = normalizedInput.takeLast(1)
+            val isDeletingFilledTile = normalizedLetter.isEmpty() && current.tiles[index].letter.isNotEmpty()
             updatedTiles[index] = updatedTiles[index].copy(letter = normalizedLetter)
-            if (normalizedLetter.isNotEmpty() && index < updatedTiles.lastIndex) {
-                index + 1
-            } else {
-                null
+            when {
+                isDeletingFilledTile -> (index - 1).takeIf { it >= 0 }
+                normalizedLetter.isNotEmpty() && index < updatedTiles.lastIndex -> index + 1
+                else -> null
             }
         }
 
@@ -44,6 +45,31 @@ class SolverViewModel(
             errorMessage = null,
         )
         return nextFocusIndex
+    }
+
+    fun handleBackspace(index: Int): Int? {
+        val current = _uiState.value
+        if (index !in current.tiles.indices) {
+            return null
+        }
+
+        val updatedTiles = current.tiles.toMutableList()
+        val focusTarget = if (current.tiles[index].letter.isNotEmpty()) {
+            updatedTiles[index] = updatedTiles[index].copy(letter = "")
+            (index - 1).takeIf { it >= 0 }
+        } else {
+            val previousFilledIndex = (index - 1 downTo 0)
+                .firstOrNull { current.tiles[it].letter.isNotEmpty() }
+                ?: return null
+            updatedTiles[previousFilledIndex] = updatedTiles[previousFilledIndex].copy(letter = "")
+            previousFilledIndex
+        }
+
+        _uiState.value = current.copy(
+            tiles = updatedTiles,
+            errorMessage = null,
+        )
+        return focusTarget
     }
 
     fun cycleColor(index: Int) {

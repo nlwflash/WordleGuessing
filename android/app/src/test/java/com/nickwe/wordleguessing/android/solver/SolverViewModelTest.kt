@@ -32,6 +32,30 @@ class SolverViewModelTest {
     }
 
     @Test
+    fun deletingFilledTileClearsItAndMovesFocusBackward() {
+        val viewModel = SolverViewModel(FakeSolverRepository())
+
+        viewModel.updateLetter(0, "c")
+        viewModel.updateLetter(1, "i")
+        val focusTarget = viewModel.updateLetter(1, "")
+
+        assertEquals(0, focusTarget)
+        assertEquals(listOf("C", "", "", "", ""), viewModel.uiState.value.tiles.map { it.letter })
+    }
+
+    @Test
+    fun backspaceFromEmptyTileClearsNearestPreviousLetter() {
+        val viewModel = SolverViewModel(FakeSolverRepository())
+
+        viewModel.updateLetter(0, "c")
+        viewModel.updateLetter(1, "i")
+        val focusTarget = viewModel.handleBackspace(2)
+
+        assertEquals(1, focusTarget)
+        assertEquals(listOf("C", "", "", "", ""), viewModel.uiState.value.tiles.map { it.letter })
+    }
+
+    @Test
     fun submitGuessUpdatesCandidatesAndClearsTheRow() {
         val repository = FakeSolverRepository(candidates = listOf("cigar"))
         val viewModel = SolverViewModel(repository)

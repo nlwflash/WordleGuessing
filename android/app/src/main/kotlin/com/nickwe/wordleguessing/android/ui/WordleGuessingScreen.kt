@@ -35,6 +35,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -46,11 +49,14 @@ import androidx.compose.ui.unit.dp
 import com.nickwe.wordleguessing.android.solver.SolverUiState
 import com.nickwe.wordleguessing.android.solver.TileColor
 import com.nickwe.wordleguessing.android.solver.TileState
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
 
 @Composable
 fun WordleGuessingScreen(
     uiState: SolverUiState,
     onLetterChange: (Int, String) -> Int?,
+    onBackspace: (Int) -> Int?,
     onColorClick: (Int) -> Unit,
     onSubmit: () -> Unit,
     onClearRow: () -> Unit,
@@ -116,6 +122,12 @@ fun WordleGuessingScreen(
                                     when {
                                         nextFocusIndex != null -> focusRequesters[nextFocusIndex].requestFocus()
                                         hasLetterInput -> focusManager.clearFocus()
+                                    }
+                                },
+                                onBackspace = {
+                                    val nextFocusIndex = onBackspace(index)
+                                    if (nextFocusIndex != null) {
+                                        focusRequesters[nextFocusIndex].requestFocus()
                                     }
                                 },
                                 onColorClick = {
@@ -287,6 +299,7 @@ private fun GuessTileEditor(
     focusRequester: FocusRequester,
     isLastTile: Boolean,
     onLetterChange: (String) -> Unit,
+    onBackspace: () -> Unit,
     onColorClick: () -> Unit,
     onMoveNext: () -> Unit,
     onDone: () -> Unit,
@@ -304,6 +317,18 @@ private fun GuessTileEditor(
                 .fillMaxWidth()
                 .height(80.dp)
                 .focusRequester(focusRequester)
+                .onPreviewKeyEvent { event ->
+                    if (
+                        event.type == KeyEventType.KeyDown &&
+                        event.key == Key.Backspace &&
+                        tile.letter.isEmpty()
+                    ) {
+                        onBackspace()
+                        true
+                    } else {
+                        false
+                    }
+                }
                 .testTag("letter_input_$index"),
             singleLine = true,
             textStyle = MaterialTheme.typography.headlineSmall.copy(
