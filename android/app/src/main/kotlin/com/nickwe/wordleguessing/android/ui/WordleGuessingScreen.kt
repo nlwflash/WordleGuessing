@@ -12,8 +12,9 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -227,12 +228,15 @@ fun WordleGuessingScreen(
                         }
 
                         else -> {
-                            LazyColumn(
+                            LazyVerticalGrid(
                                 modifier = Modifier.fillMaxSize(),
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                columns = GridCells.Adaptive(minSize = 88.dp),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp),
                             ) {
                                 items(uiState.candidates, key = { it }) { candidate ->
                                     Card(
+                                        modifier = Modifier.fillMaxWidth(),
                                         colors = CardDefaults.cardColors(
                                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
                                         ),
@@ -241,8 +245,9 @@ fun WordleGuessingScreen(
                                             text = candidate,
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(horizontal = 16.dp, vertical = 12.dp)
+                                                .padding(horizontal = 10.dp, vertical = 12.dp)
                                                 .testTag("candidate_item_$candidate"),
+                                            textAlign = TextAlign.Center,
                                             style = MaterialTheme.typography.bodyLarge,
                                         )
                                     }
